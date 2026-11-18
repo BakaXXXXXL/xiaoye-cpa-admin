@@ -16,6 +16,34 @@
 - [权限配置示例](examples/access.yaml)
 - [模型配置示例](examples/model.yaml)
 
+## 让 Hermes 安装管理能力
+
+把下面这段自然语言直接发给服务器上的 Hermes：
+
+```text
+请为这台服务器安装 CPA 管理 CLI 和 Hermes Skill，仓库地址是：
+https://github.com/BakaXXXXXL/xiaoye-cpa-admin
+
+要求：
+1. 将仓库克隆到一个临时目录，阅读 README.md 和 docs/manual.zh.md。
+2. 确认 Python 3 和 PyYAML 可用；缺少依赖时先告诉我，不要自行更换系统 Python。
+3. 将 server/cpa_admin.py 安装为 /opt/cpa-admin/cpa_admin.py，并在 /usr/local/bin/cpa-admin 建立命令链接。
+4. 将 skills/cpa-admin/SKILL.md 安装到 Hermes 的 skills/cpa-admin/SKILL.md。
+5. 保留服务器现有的 access.yaml、secrets.json、catalog 和 model-capabilities.json，不读取或输出任何密钥，不覆盖现有权限配置。
+6. 安装过程不要执行 cpa-admin apply、rollback，不要重启 CPA 服务，也不要创建或轮换 Key。
+7. 安装后运行 cpa-admin --help；如果服务器已有统一配置，再运行 cpa-admin validate 做只读验证。
+8. 最后告诉我 CLI 和 Skill 的安装路径、验证结果，以及以后可以用哪些自然语言让你协助管理模型和 Key 权限。
+9. 清理临时克隆目录，不把任何服务器私有配置上传回公开仓库。
+```
+
+安装后可以这样说：
+
+```text
+列出 CPA 当前所有模型和每把 Key 的权限。
+给 friend 增加 qwen-payg/Qwen4-Max 的使用权限，但先不要发布；校验后把 diff 给我看。
+新增一个模型配置草稿，我需要你先检查字段是否合法，不要执行 apply。
+```
+
 ## 常用命令
 
 ```bash
