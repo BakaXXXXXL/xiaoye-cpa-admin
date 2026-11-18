@@ -198,11 +198,16 @@ def diff():
     previous = snapshots[-1]
     for path in (ACCESS, GENERATED):
         old_path = previous / path.name
-        old = old_path.read_text(encoding="utf-8").splitlines() if old_path.exists() else []
         if path == GENERATED:
-            document = {"schema_version": 1, "config_version": "preview", "models": catalog_models()}
-            new = (json.dumps(document, ensure_ascii=False, indent=2) + "\n").splitlines()
+            old_document = json.loads(old_path.read_text(encoding="utf-8")) if old_path.exists() else {"models": []}
+            new_document = {"schema_version": 1, "models": catalog_models()}
+            old_document = {"schema_version": 1, "models": old_document.get("models", [])}
+            for document in (old_document, new_document):
+                document["models"] = sorted(document["models"], key=lambda model: model["id"])
+            old = (json.dumps(old_document, ensure_ascii=False, indent=2) + "\n").splitlines()
+            new = (json.dumps(new_document, ensure_ascii=False, indent=2) + "\n").splitlines()
         else:
+            old = old_path.read_text(encoding="utf-8").splitlines() if old_path.exists() else []
             new = path.read_text(encoding="utf-8").splitlines() if path.exists() else []
         print("\n".join(difflib.unified_diff(old, new, str(old_path), str(path), lineterm="")))
 
