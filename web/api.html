@@ -33,8 +33,8 @@
 <p>推荐先安装小配置工具。它会从服务器读取你有权使用的模型、思考强度和上下文限制，不需要手动逐项填写。</p>
 <div class="step"><span class="number">1</span><p><strong>打开 Windows 终端。</strong>按 <code>Win + R</code>，输入 <code>powershell</code>，按回车。</p></div>
 <div class="step"><span class="number">2</span><p><strong>复制下面整行到终端，按回车。</strong>它只安装配置工具，不会修改模型权限。</p></div>
-<div class="codebox"><button class="copy">复制</button><pre>irm https://raw.githubusercontent.com/BakaXXXXXL/xiaoye_cap-sync/main/install.ps1 | iex</pre></div>
-<p>看到 <code>cpa-sync 0.2.0</code> 就表示安装成功。如果终端提示找不到命令，请关闭终端再打开。已经安装过旧版时，重新执行上面的安装命令即可升级。</p>
+<div class="codebox"><button class="copy">复制</button><pre>[Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12; irm https://bakandarkfsg.com/cpa-sync/install.ps1 | iex</pre></div>
+<p>看到 <code>cpa-sync 0.2.0</code> 就表示安装成功。如果终端提示找不到命令，请关闭终端再打开。已经安装过旧版时，重新执行上面的安装命令即可升级。安装包支持本域名和 GitHub 两个下载源，并会自动校验 SHA-256。</p>
 <div class="step"><span class="number">3</span><p><strong>选择你的工具，然后按对应步骤操作。</strong></p></div>
 <div class="tabs" role="tablist"><button class="tab active" data-target="opencode">OpenCode</button><button class="tab" data-target="dsh">DSH</button><button class="tab" data-target="pi">Pi</button><button class="tab" data-target="kimi">Kimi Code</button><button class="tab" data-target="other">其他工具</button></div>
 <div class="panel active" id="opencode">
