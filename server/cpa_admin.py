@@ -250,6 +250,11 @@ def main():
     models.add_argument("--reasoning")
     models.add_argument("--default")
     models.add_argument("--supports-disable", action="store_true")
+    pool = sub.add_parser("pool")
+    pool.add_argument("action", choices=["list", "show", "enable", "disable", "set-priority", "test", "diff", "apply", "rollback", "import"])
+    pool.add_argument("pool_id", nargs="?")
+    pool.add_argument("channel_id", nargs="?")
+    pool.add_argument("value", nargs="?")
     sub.add_parser("validate")
     sub.add_parser("apply")
     sub.add_parser("diff")
@@ -267,6 +272,24 @@ def main():
         if args.action == "add" and not all((args.id, args.context, args.output)):
             raise RuntimeError("models add requires id, --context and --output")
         models_command(args)
+    elif args.group == "pool":
+        import pools
+        if args.action == "import":
+            print(f"Imported {pools.import_pools()} pools")
+        elif args.action == "list":
+            pools.list_pools()
+        elif args.action == "show":
+            pools.show_pool(args.pool_id)
+        elif args.action in ("enable", "disable", "set-priority"):
+            pools.edit_pool(args.pool_id, args.channel_id, args.action, args.value)
+        elif args.action == "test":
+            pools.test_channel(args.pool_id, args.channel_id)
+        elif args.action == "diff":
+            pools.diff_pools()
+        elif args.action == "apply":
+            pools.apply_pools()
+        elif args.action == "rollback":
+            pools.rollback_pools()
     elif args.group == "validate":
         _, _, models = validate()
         print(f"Valid: {len(models)} models")

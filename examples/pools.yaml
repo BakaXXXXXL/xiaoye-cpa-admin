@@ -1,0 +1,19 @@
+schema_version: 1
+pools:
+  public/pool-model:
+    strategy: round-robin
+    channels:
+      - id: provider-a-0
+        provider: provider-a
+        name: native-model-name
+        enabled: true
+        priority: 80
+        config:
+          display-name: Public Model (Provider A)
+      - id: provider-b-0
+        provider: provider-b
+        name: native-model-name
+        enabled: true
+        priority: 60
+        config:
+          display-name: Public Model (Provider B)

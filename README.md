@@ -5,6 +5,7 @@
 - 按渠道维护可读 YAML 模型目录。
 - 统一管理每把下游 Key 的模型范围、接口权限、RPM 和上游映射。
 - 同一策略驱动 `/models`、`/capabilities`、Chat、Responses、Keeper 和 Credits。
+- 查看公开模型背后的聚合池和渠道，安全启停渠道、调整优先级并测试指定上游。
 - 提供校验、差异预览、自动备份、发布验证和回滚。
 - 附带 Hermes Skill 和中文操作手册。
 - 实际密钥和线上策略不进入公开仓库。
@@ -15,6 +16,7 @@
 - [Hermes Skill](skills/cpa-admin/SKILL.md)
 - [权限配置示例](examples/access.yaml)
 - [模型配置示例](examples/model.yaml)
+- [聚合池配置示例](examples/pools.yaml)
 
 ## 让 Hermes 安装管理能力
 

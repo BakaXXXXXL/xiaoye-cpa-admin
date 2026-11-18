@@ -110,6 +110,50 @@ cpa-admin rollback
 
 回滚会覆盖当前草稿，因此执行前先保存仍需保留的变更。
 
+## 聚合池与上游渠道
+
+查看公开模型背后的渠道：
+
+```bash
+cpa-admin pool list
+cpa-admin pool show xiaoye/auto
+```
+
+每个渠道有稳定的 `id`、CPA provider、上游原生模型名、启用状态和优先级。`config` 保留 CPA 的显示名称、模态等模型字段。
+
+停用或恢复渠道：
+
+```bash
+cpa-admin pool disable xiaoye/auto CHANNEL_ID
+cpa-admin pool enable xiaoye/auto CHANNEL_ID
+```
+
+调整优先级：
+
+```bash
+cpa-admin pool set-priority xiaoye/auto CHANNEL_ID 80
+```
+
+优先级实际属于 CPA provider，不是独立的单模型属性。修改时会同步更新同一 provider 的渠道引用，避免不同池之间产生冲突。
+
+显式测试一条真实渠道：
+
+```bash
+cpa-admin pool test xiaoye/auto CHANNEL_ID
+```
+
+该命令会向上游发送一个最小聊天请求，会产生少量用量。429 表示上游限流，不能据此判定本地配置无效。
+
+发布与回滚：
+
+```bash
+cpa-admin pool diff
+cpa-admin pool apply
+cpa-admin pool rollback
+```
+
+池发布会备份 CPA 核心配置和 pools.yaml，只替换受管理的模型映射，然后重启 CPA 核心并等待 `/models` 恢复。失败会恢复备份。心跳、视觉预处理、UA 分流和 LongCat 思考转换不会被移除。
+
 ## 下游同步
 
 服务端变更生效后，下游运行：
