@@ -127,6 +127,29 @@ cpa-admin pool show xiaoye/auto
 
 每个渠道有稳定的 `id`、CPA provider、上游原生模型名、启用状态和优先级。`config` 保留 CPA 的显示名称、模态等模型字段。
 
+新建池和增删渠道：
+
+```bash
+cpa-admin pool create public/new-model
+cpa-admin pool channel add public/new-model provider-a-main \
+  --provider provider-a \
+  --name native-model-name \
+  --priority 80 \
+  --display-name "New Model (Provider A)"
+cpa-admin pool channel remove public/new-model provider-a-main
+```
+
+新渠道只引用 CPA 核心中已有的 provider，因此不会复制或暴露 BaseURL 和密钥。`--priority` 可省略，此时继承该 provider 的现有优先级；`--display-name` 也可省略。渠道默认启用，稳定的渠道 ID 由管理员指定，不能因为删除后重加而随意更改。
+
+空池或所有渠道都停用的池可以保存为草稿，但不能发布。分别检查草稿和发布条件：
+
+```bash
+cpa-admin pool validate
+cpa-admin pool validate --for-publish
+```
+
+`pool apply` 会自动执行发布条件校验。如果新建的是全新公开模型，还需要分别添加模型能力目录并给下游授权；池命令不会自动修改模型目录或 Key 权限。
+
 停用或恢复渠道：
 
 ```bash
@@ -140,7 +163,7 @@ cpa-admin pool enable xiaoye/auto CHANNEL_ID
 cpa-admin pool set-priority xiaoye/auto CHANNEL_ID 80
 ```
 
-优先级实际属于 CPA provider，不是独立的单模型属性。修改时会同步更新同一 provider 的渠道引用，避免不同池之间产生冲突。
+优先级实际属于 CPA provider，不是独立的单模型属性。通过 `set-priority` 或 `channel add --priority` 修改时，会同步更新同一 provider 的渠道引用，避免不同池之间产生冲突。
 
 显式测试一条真实渠道：
 

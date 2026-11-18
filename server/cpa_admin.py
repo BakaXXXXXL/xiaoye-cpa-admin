@@ -251,10 +251,36 @@ def main():
     models.add_argument("--default")
     models.add_argument("--supports-disable", action="store_true")
     pool = sub.add_parser("pool")
-    pool.add_argument("action", choices=["list", "show", "enable", "disable", "set-priority", "test", "diff", "apply", "rollback", "import"])
-    pool.add_argument("pool_id", nargs="?")
-    pool.add_argument("channel_id", nargs="?")
-    pool.add_argument("value", nargs="?")
+    pool_sub = pool.add_subparsers(dest="pool_action", required=True)
+    pool_sub.add_parser("list")
+    pool_show = pool_sub.add_parser("show")
+    pool_show.add_argument("pool_id")
+    pool_create = pool_sub.add_parser("create")
+    pool_create.add_argument("pool_id")
+    for action in ("enable", "disable", "test"):
+        command = pool_sub.add_parser(action)
+        command.add_argument("pool_id")
+        command.add_argument("channel_id")
+    pool_priority = pool_sub.add_parser("set-priority")
+    pool_priority.add_argument("pool_id")
+    pool_priority.add_argument("channel_id")
+    pool_priority.add_argument("value", type=int)
+    pool_validate = pool_sub.add_parser("validate")
+    pool_validate.add_argument("--for-publish", action="store_true")
+    channel = pool_sub.add_parser("channel")
+    channel_sub = channel.add_subparsers(dest="channel_action", required=True)
+    channel_add = channel_sub.add_parser("add")
+    channel_add.add_argument("pool_id")
+    channel_add.add_argument("channel_id")
+    channel_add.add_argument("--provider", required=True)
+    channel_add.add_argument("--name", required=True)
+    channel_add.add_argument("--priority", type=int)
+    channel_add.add_argument("--display-name")
+    channel_remove = channel_sub.add_parser("remove")
+    channel_remove.add_argument("pool_id")
+    channel_remove.add_argument("channel_id")
+    for action in ("diff", "apply", "rollback", "import"):
+        pool_sub.add_parser(action)
     sub.add_parser("validate")
     sub.add_parser("apply")
     sub.add_parser("diff")
@@ -274,21 +300,34 @@ def main():
         models_command(args)
     elif args.group == "pool":
         import pools
-        if args.action == "import":
+        action = args.pool_action
+        if action == "import":
             print(f"Imported {pools.import_pools()} pools")
-        elif args.action == "list":
+        elif action == "list":
             pools.list_pools()
-        elif args.action == "show":
+        elif action == "show":
             pools.show_pool(args.pool_id)
-        elif args.action in ("enable", "disable", "set-priority"):
-            pools.edit_pool(args.pool_id, args.channel_id, args.action, args.value)
-        elif args.action == "test":
+        elif action == "create":
+            pools.create_pool(args.pool_id)
+        elif action == "channel":
+            if args.channel_action == "add":
+                pools.add_channel(args.pool_id, args.channel_id, args.provider, args.name, args.priority, args.display_name)
+            else:
+                pools.remove_channel(args.pool_id, args.channel_id)
+        elif action in ("enable", "disable", "set-priority"):
+            value = args.value if action == "set-priority" else None
+            pools.edit_pool(args.pool_id, args.channel_id, action, value)
+        elif action == "test":
             pools.test_channel(args.pool_id, args.channel_id)
-        elif args.action == "diff":
+        elif action == "validate":
+            validated = pools.validate_pools(for_apply=args.for_publish)
+            state = "publishable" if args.for_publish else "valid draft"
+            print(f"Pool configuration {state}: {len(validated)} pools")
+        elif action == "diff":
             pools.diff_pools()
-        elif args.action == "apply":
+        elif action == "apply":
             pools.apply_pools()
-        elif args.action == "rollback":
+        elif action == "rollback":
             pools.rollback_pools()
     elif args.group == "validate":
         _, _, models = validate()

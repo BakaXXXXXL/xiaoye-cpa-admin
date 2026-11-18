@@ -1,6 +1,6 @@
 ---
 name: cpa-admin
-description: Manage CPA model capabilities, downstream-key access and upstream model pools with cpa-admin. Use when listing, adding, disabling, granting or revoking models, changing key limits/endpoints, inspecting pool channels, testing or changing channels, validating, applying or rolling back CPA configuration.
+description: Manage CPA model capabilities, downstream-key access and upstream model pools with cpa-admin. Use when listing, adding, disabling, granting or revoking models, changing key limits/endpoints, creating pools, adding or removing pool channels, testing or changing channels, validating, applying or rolling back CPA configuration.
 ---
 
 # CPA 管理
@@ -90,23 +90,34 @@ cpa-admin pool list
 cpa-admin pool show xiaoye/auto
 ```
 
-渠道修改只生成草稿：
+池和渠道修改只生成草稿：
 
 ```bash
+cpa-admin pool create public/new-model
+cpa-admin pool channel add public/new-model provider-a-main \
+  --provider provider-a \
+  --name native-model-name \
+  --priority 80 \
+  --display-name "New Model (Provider A)"
+cpa-admin pool channel remove public/new-model provider-a-main
 cpa-admin pool disable xiaoye/auto channel-id
 cpa-admin pool enable xiaoye/auto channel-id
 cpa-admin pool set-priority xiaoye/auto channel-id 80
+cpa-admin pool validate
+cpa-admin pool validate --for-publish
 cpa-admin pool diff
 ```
 
-渠道启停、池发布和回滚需要用户确认：
+新渠道只能引用已有 provider，不接收或复制 BaseURL、密钥。空池可以保存草稿，但不能通过发布校验。全新公开模型还需要单独维护模型目录和下游授权，不能只做池映射。
+
+建池、渠道增删和启停、池发布和回滚需要用户确认：
 
 ```bash
 cpa-admin pool apply
 cpa-admin pool rollback
 ```
 
-只有用户明确要求测试真实渠道时才执行 `cpa-admin pool test POOL CHANNEL`，因为这会产生少量上游请求。优先级是 CPA provider 级设置；修改一个渠道可能更新同 provider 的其他渠道，必须向用户说明。
+只有用户明确要求测试真实渠道时才执行 `cpa-admin pool test POOL CHANNEL`，因为这会产生少量上游请求。优先级是 CPA provider 级设置；`set-priority` 或 `channel add --priority` 会更新同 provider 的其他渠道引用，必须向用户说明。
 
 不要移除心跳、视觉预处理、UA 分流或 LongCat 思考转换。池管理只更新 CPA 核心的受管模型映射。
 

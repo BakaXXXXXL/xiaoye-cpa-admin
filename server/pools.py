@@ -43,9 +43,68 @@ def import_pools():
     return len(pools)
 
 
+def get_pool(document, pool_id):
+    pool = document.get("pools", {}).get(pool_id)
+    if pool is None:
+        raise RuntimeError(f"unknown pool: {pool_id}")
+    return pool
+
+
 def find_channel(document, pool_id, channel_id):
-    pool = document["pools"][pool_id]
-    return next(channel for channel in pool["channels"] if channel["id"] == channel_id)
+    pool = get_pool(document, pool_id)
+    channel = next((item for item in pool.get("channels") or [] if item.get("id") == channel_id), None)
+    if channel is None:
+        raise RuntimeError(f"unknown channel: {pool_id} / {channel_id}")
+    return channel
+
+
+def create_pool(pool_id):
+    if not pool_id or pool_id.strip() != pool_id:
+        raise RuntimeError("pool id must be non-empty and have no surrounding whitespace")
+    document = load_pools()
+    pools = document.setdefault("pools", {})
+    if pool_id in pools:
+        raise RuntimeError(f"pool already exists: {pool_id}")
+    pools[pool_id] = {"strategy": "round-robin", "channels": []}
+    save_pools(document)
+    print(f"Pool draft created: {pool_id}; add an enabled channel before apply")
+
+
+def add_channel(pool_id, channel_id, provider_name, native_name, priority=None, display_name=None):
+    if not channel_id or channel_id.strip() != channel_id:
+        raise RuntimeError("channel id must be non-empty and have no surrounding whitespace")
+    if not native_name or native_name.strip() != native_name:
+        raise RuntimeError("native model name must be non-empty and have no surrounding whitespace")
+    document = load_pools()
+    pool = get_pool(document, pool_id)
+    if any(item.get("id") == channel_id for item in pool.get("channels") or []):
+        raise RuntimeError(f"channel already exists: {pool_id} / {channel_id}")
+    providers = {provider["name"]: provider for provider in (load_core().get("api-keys") or {}).get("openai-compatibility", [])}
+    provider = providers.get(provider_name)
+    if not provider:
+        raise RuntimeError(f"unknown provider: {provider_name}")
+    if not provider.get("keys"):
+        raise RuntimeError(f"provider has no credentials: {provider_name}")
+    existing_priority = next((item.get("priority") for item_pool in document["pools"].values() for item in item_pool.get("channels") or [] if item.get("provider") == provider_name and item.get("priority") is not None), provider.get("priority"))
+    effective_priority = priority if priority is not None else existing_priority
+    if priority is not None:
+        for item_pool in document["pools"].values():
+            for item in item_pool.get("channels") or []:
+                if item.get("provider") == provider_name:
+                    item["priority"] = priority
+    config = {"display-name": display_name} if display_name else {}
+    pool.setdefault("channels", []).append({"id": channel_id, "provider": provider_name, "name": native_name, "enabled": True, "priority": effective_priority, "config": config})
+    save_pools(document)
+    print("Channel draft added; run cpa-admin pool diff and cpa-admin pool apply")
+
+
+def remove_channel(pool_id, channel_id):
+    document = load_pools()
+    pool = get_pool(document, pool_id)
+    find_channel(document, pool_id, channel_id)
+    pool["channels"] = [item for item in pool.get("channels") or [] if item.get("id") != channel_id]
+    save_pools(document)
+    print("Channel draft removed; run cpa-admin pool diff and cpa-admin pool apply")
 
 
 def list_pools():
@@ -74,15 +133,24 @@ def edit_pool(pool_id, channel_id, action, value=None):
     print("Pool draft updated; run cpa-admin pool diff and cpa-admin pool apply")
 
 
-def validate_pools():
+def validate_pools(for_apply=False):
     core = load_core()
     providers = {provider["name"]: provider for provider in (core.get("api-keys") or {}).get("openai-compatibility", [])}
     pools = load_pools().get("pools") or {}
     for pool_id, pool in pools.items():
         channels = pool.get("channels") or []
-        if not any(channel.get("enabled", True) for channel in channels):
+        if for_apply and not any(channel.get("enabled", True) for channel in channels):
             raise RuntimeError(f"pool {pool_id} has no enabled channel")
+        channel_ids = set()
         for channel in channels:
+            channel_id = channel.get("id")
+            if not channel_id:
+                raise RuntimeError(f"pool {pool_id} has a channel without id")
+            if channel_id in channel_ids:
+                raise RuntimeError(f"duplicate channel id: {pool_id} / {channel_id}")
+            channel_ids.add(channel_id)
+            if not channel.get("name"):
+                raise RuntimeError(f"channel has no native model name: {pool_id} / {channel_id}")
             provider = providers.get(channel.get("provider"))
             if not provider:
                 raise RuntimeError(f"unknown provider: {channel.get('provider')}")
@@ -101,7 +169,7 @@ def snapshot():
 
 def render_core():
     core = load_core()
-    pools = validate_pools()
+    pools = validate_pools(for_apply=True)
     providers = {provider["name"]: provider for provider in (core.get("api-keys") or {}).get("openai-compatibility", [])}
     for provider in providers.values():
         provider["models"] = [model for model in (provider.get("models") or []) if model.get("alias") not in pools]
@@ -136,7 +204,7 @@ def wait_for_core():
 
 
 def apply_pools():
-    validate_pools()
+    validate_pools(for_apply=True)
     saved = snapshot()
     rendered = render_core()
     temporary = CORE.with_suffix(".cpa-admin-tmp")
