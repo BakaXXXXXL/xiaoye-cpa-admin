@@ -1,0 +1,20 @@
+models:
+  - id: provider/model-a
+    display_name: Model A
+    enabled: true
+    capabilities:
+      tools: true
+      reasoning: true
+      attachments: true
+      streaming: true
+    modalities:
+      input: [text, image]
+      output: [text]
+    limits:
+      context: 1000000
+      max_output: 65536
+    reasoning:
+      supported: true
+      efforts: [low, high, xhigh]
+      default: high
+      supports_disable: false

@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+secrets*.json
+access.yaml
+catalog/
+*.bak-*
