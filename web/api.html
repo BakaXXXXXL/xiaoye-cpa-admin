@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API 使用指南 · 小夜 CPA 网关</title>
+<meta name="description" content="拿到 Base URL 和 Key 后，一步一步在 OpenCode、DSH 或其他 OpenAI 兼容工具中配置小夜 CPA。">
+<style>
+:root{--bg:#2A1F14;--card:rgba(61,43,31,.82);--cream:#FFF8EE;--muted:rgba(255,248,238,.68);--amber:#E8A33D;--pudding:#F5DFA1;--purple:#9B82C5;--line:rgba(255,248,238,.13);--code:#1E160F;--green:#9DCB9A}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;background:radial-gradient(ellipse at 85% 0,rgba(123,94,175,.16),transparent 42%),radial-gradient(ellipse at 5% 20%,rgba(232,163,61,.12),transparent 38%),var(--bg);color:var(--cream);line-height:1.8;user-select:text}a{color:var(--amber);text-decoration:none}a:hover{text-decoration:underline}button,input,select{font:inherit}button{cursor:pointer}.topbar{position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;gap:16px;align-items:center;padding:14px 28px;background:rgba(42,31,20,.88);border-bottom:1px solid var(--line);backdrop-filter:blur(14px)}.back{color:var(--muted)}.brand{color:var(--pudding);font-size:.85em;letter-spacing:.1em}.wrap{width:min(1060px,calc(100% - 40px));margin:auto;padding:48px 0 80px}.hero{display:grid;grid-template-columns:1fr 180px;gap:28px;align-items:center;padding:16px 0 38px;border-bottom:1px solid var(--line)}.eyebrow{color:var(--amber);font-size:.78em;letter-spacing:.15em}h1{margin:12px 0;font-family:"Noto Serif SC","SimSun",serif;font-size:clamp(2em,5vw,3.25em);line-height:1.3;font-weight:600}h2{margin:0 0 12px;color:var(--pudding);font-family:"Noto Serif SC","SimSun",serif;font-size:1.42em}h3{margin:18px 0 8px;color:var(--pudding);font-size:1.02em}p{margin:8px 0;color:var(--muted)}.hero img{width:180px;filter:drop-shadow(0 10px 24px rgba(0,0,0,.35))}.badge{display:inline-block;padding:3px 10px;border:1px solid rgba(232,163,61,.35);border-radius:999px;color:var(--pudding);background:rgba(232,163,61,.08);font-size:.82em}.progress{display:flex;gap:8px;margin:24px 0 4px}.progress span{height:4px;flex:1;border-radius:4px;background:var(--line)}.progress span:first-child{background:var(--amber)}section{margin-top:24px;padding:28px;border:1px solid var(--line);border-radius:15px;background:var(--card)}.step{display:flex;gap:14px;align-items:flex-start;margin-bottom:14px}.number{display:grid;place-items:center;flex:0 0 30px;height:30px;border-radius:50%;background:var(--amber);color:var(--bg);font-weight:700}.step p{margin:1px 0}.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}.choice{padding:18px;border:1px solid var(--line);border-radius:11px;background:rgba(42,31,20,.45)}.choice strong{color:var(--cream)}code{padding:2px 6px;border-radius:5px;background:var(--code);color:var(--pudding);font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.9em}.codebox{position:relative;margin-top:14px;border:1px solid var(--line);border-radius:10px;background:var(--code);overflow:hidden}.codebox pre{margin:0;padding:16px;overflow:auto;color:#F4E7D3;font: .86em/1.75 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;word-break:break-word}.copy{position:absolute;right:8px;top:8px;padding:4px 10px;border:1px solid var(--line);border-radius:7px;background:#3D2B1F;color:var(--pudding);font-size:.78em}.copy:hover{border-color:var(--amber)}.note{margin-top:16px;padding:13px 15px;border-left:3px solid var(--amber);border-radius:0 8px 8px 0;background:rgba(232,163,61,.07);color:var(--muted)}.safe{border-left-color:var(--green)}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}.tab{padding:7px 14px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--muted)}.tab.active{border-color:var(--amber);background:rgba(232,163,61,.12);color:var(--pudding)}.panel{display:none}.panel.active{display:block}.field{display:grid;gap:6px;margin:12px 0}.field label{color:var(--pudding);font-size:.9em}.field input,.field select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:var(--code);color:var(--cream);outline:none}.field input:focus{border-color:var(--amber)}.primary{padding:10px 18px;border:0;border-radius:8px;background:var(--amber);color:var(--bg);font-weight:700}.primary:hover{filter:brightness(1.08)}.primary:disabled{opacity:.55;cursor:wait}.results{display:grid;gap:10px;margin-top:18px}.model{padding:14px;border:1px solid var(--line);border-radius:9px;background:rgba(42,31,20,.5)}.model strong{color:var(--pudding)}.model small{display:block;color:var(--muted)}.error{color:#FFB4A2;white-space:pre-wrap}.success{color:var(--green)}table{width:100%;border-collapse:collapse;margin-top:12px;font-size:.92em}th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{color:var(--muted)}td{color:var(--muted)}td:first-child{color:var(--pudding)}details{margin-top:12px;border-top:1px solid var(--line);padding-top:12px}summary{cursor:pointer;color:var(--pudding)}ul{color:var(--muted)}li{margin:5px 0}footer{text-align:center;color:var(--muted);font-size:.86em;margin-top:30px}.anchor{scroll-margin-top:82px}@media(max-width:720px){.wrap{width:calc(100% - 26px);padding-top:30px}.hero{grid-template-columns:1fr}.hero img{display:none}section{padding:19px}.two-col{grid-template-columns:1fr}.topbar{padding:12px 16px}.brand{display:none}table{display:block;overflow-x:auto}.codebox pre{padding-right:54px}}
+</style>
+</head>
+<body>
+<header class="topbar"><a class="back" href="/">← 返回小夜甜品店</a><span class="brand">CPA · START HERE</span></header>
+<main class="wrap">
+<div class="hero">
+  <div><div class="eyebrow">API GUIDE FOR EVERYONE</div><h1>拿到地址和 Key，<br>就能开始使用。</h1><p>不需要懂编程。这份页面会带你把模型配置进 OpenCode、DSH 或其他支持 OpenAI 兼容接口的工具。</p><span class="badge">OpenAI 兼容 · 自动同步模型能力</span></div>
+  <img src="assets/Q版/小夜Q_捧布丁.png" alt="捧着布丁的小夜">
+</div>
+<div class="progress" aria-hidden="true"><span></span><span></span><span></span></div>
+
+<section id="prepare">
+<h2>先准备好两样东西</h2>
+<div class="two-col">
+<div class="choice"><strong>Base URL（接口地址）</strong><p>它告诉工具“去哪里找模型”。主入口是：</p><code>https://bakandarkfsg.com/cpa/v1</code><p>如果你拿到的是朋友通道地址，就使用朋友通道的地址，不要混用。</p></div>
+<div class="choice"><strong>API Key（访问钥匙）</strong><p>它告诉服务器“你是谁、可以使用哪些模型”。通常由管理员发给你。</p><p>Key 不是网页登录密码，也不要发给无关的人。</p></div>
+</div>
+<div class="note safe"><strong>安全提示：</strong>不要把 Key 发到群聊、截图或公开代码仓库。本页面的在线查询不会保存 Key，刷新页面就会清除。</div>
+</section>
+
+<section id="automatic">
+<h2>最省心的方法：自动配置</h2>
+<p>推荐先安装小配置工具。它会从服务器读取你有权使用的模型、思考强度和上下文限制，不需要手动逐项填写。</p>
+<div class="step"><span class="number">1</span><p><strong>打开 Windows 终端。</strong>按 <code>Win + R</code>，输入 <code>powershell</code>，按回车。</p></div>
+<div class="step"><span class="number">2</span><p><strong>复制下面整行到终端，按回车。</strong>它只安装配置工具，不会修改模型权限。</p></div>
+<div class="codebox"><button class="copy">复制</button><pre>irm https://raw.githubusercontent.com/BakaXXXXXL/xiaoye_cap-sync/main/install.ps1 | iex</pre></div>
+<p>看到 <code>cpa-sync 0.1.0</code> 就表示安装成功。如果终端提示找不到命令，请关闭终端再打开。</p>
+<div class="step"><span class="number">3</span><p><strong>选择你的工具，然后按对应步骤操作。</strong></p></div>
+<div class="tabs" role="tablist"><button class="tab active" data-target="opencode">OpenCode</button><button class="tab" data-target="dsh">DSH</button><button class="tab" data-target="other">其他工具</button></div>
+<div class="panel active" id="opencode">
+<h3>OpenCode：三条命令完成配置</h3>
+<p>把下面的地址和 <code>你的Key</code> 替换成你实际拿到的内容，再依次执行：</p>
+<div class="codebox"><button class="copy">复制</button><pre>$env:CPA_BASE_URL = "https://bakandarkfsg.com/cpa/v1"</pre></div>
+<div class="codebox"><button class="copy">复制</button><pre>$env:CPA_API_KEY = "你的Key"</pre></div>
+<div class="codebox"><button class="copy">复制</button><pre>cpa-sync setup opencode --verify</pre></div>
+<p>看到 <code>OpenCode configuration valid</code> 后，重新打开 OpenCode，在模型列表中选择 <code>cpa/...</code> 开头的模型。</p>
+<div class="note">以后服务器增加或调整模型，只需运行 <code>cpa-sync sync opencode --verify</code>，不用重新安装。</div>
+</div>
+<div class="panel" id="dsh">
+<h3>DSH：按你使用的界面选择 profile</h3>
+<p>先执行两条环境变量命令：</p>
+<div class="codebox"><button class="copy">复制</button><pre>$env:CPA_BASE_URL = "https://bakandarkfsg.com/cpa/v1"
+$env:CPA_API_KEY = "你的Key"</pre></div>
+<p>再根据界面选择一条命令：</p>
+<table><tr><th>你使用的界面</th><th>需要执行的命令</th></tr><tr><td>桌面端</td><td><code>cpa-sync setup dsh --profile desktop --verify</code></td></tr><tr><td>终端界面（TUI）</td><td><code>cpa-sync setup dsh --profile dsh-tui --verify</code></td></tr><tr><td>网页界面（Web）</td><td><code>cpa-sync setup dsh --profile web --verify</code></td></tr></table>
+<p>配置完成后重新打开 DSH，在模型选择器中选择 CPA 提供的模型。模型修改会在下一次请求时生效。</p>
+<div class="note">以后同步更新时，把命令中的 <code>setup</code> 改成 <code>sync</code>，profile 保持不变。</div>
+</div>
+<div class="panel" id="other">
+<h3>其他工具：不用安装同步器也能接入</h3>
+<p>在工具的“自定义供应商 / Custom Provider / OpenAI Compatible”页面填写：</p>
+<table><tr><th>设置项</th><th>填写内容</th></tr><tr><td>Base URL / API 地址</td><td>你拿到的 Base URL</td></tr><tr><td>API Key / 密钥</td><td>你拿到的 Key</td></tr><tr><td>API 类型 / 协议</td><td>OpenAI Chat Completions</td></tr><tr><td>模型 ID</td><td>使用下方“查看我的模型”查询，不要自行猜测</td></tr></table>
+<p>如果工具支持自动发现模型，可以点击“获取模型”；如果它只显示模型名而没有思考强度，这是工具协议的限制，不代表模型不能思考。</p>
+</div>
+</section>
+
+<section id="models" class="anchor">
+<h2>查看我的 Key 能使用哪些模型</h2>
+<p>输入信息后点击查询。内容只用于当前这一次请求，不会写入浏览器存储，也不会被本页面保存。</p>
+<form id="capability-form">
+<div class="field"><label for="base-url">Base URL</label><input id="base-url" type="url" required value="https://bakandarkfsg.com/cpa/v1" autocomplete="off"></div>
+<div class="field"><label for="api-key">API Key</label><input id="api-key" type="password" required placeholder="粘贴你的 Key" autocomplete="off" spellcheck="false"></div>
+<button class="primary" type="submit" id="query-button">读取我的模型</button>
+</form>
+<div id="status" role="status" aria-live="polite"></div>
+<div class="results" id="results"></div>
+</section>
+
+<section id="manual">
+<h2>需要手动填写时，怎么看模型信息？</h2>
+<table><tr><th>模型信息</th><th>含义</th><th>常见填写位置</th></tr><tr><td>模型 ID</td><td>调用模型的唯一名称，区分大小写</td><td>Model / Model ID</td></tr><tr><td>上下文窗口</td><td>一次对话可容纳的大致内容长度</td><td>Context Window</td></tr><tr><td>最大输出</td><td>模型单次最多生成的 token</td><td>Max Output Tokens</td></tr><tr><td>输入类型</td><td>是否接受文字、图片或视频</td><td>Input / Modalities</td></tr><tr><td>思考强度</td><td>模型可用的推理档位，不同模型可能不同</td><td>Reasoning Effort</td></tr></table>
+<div class="note">如果工具提供“自动配置”或支持 cpa-sync，优先自动同步，避免手工抄错。</div>
+</section>
+
+<section id="reference">
+<h2>API 参考与常见问题</h2>
+<details open><summary>工具和 API 请求使用哪些地址？</summary><table><tr><th>用途</th><th>方法与路径</th></tr><tr><td>查看模型列表</td><td><code>GET /models</code></td></tr><tr><td>查看模型完整能力</td><td><code>GET /capabilities</code></td></tr><tr><td>发起对话</td><td><code>POST /chat/completions</code></td></tr><tr><td>Responses 接口</td><td><code>POST /responses</code></td></tr></table><p>完整地址是 Base URL 加上表中的路径。所有请求都使用 <code>Authorization: Bearer 你的Key</code>。</p></details>
+<details><summary>为什么提示 401？</summary><p>Key 缺失、复制不完整或已失效。检查是否多复制了空格，并确认 Base URL 与 Key 属于同一个入口。</p></details>
+<details><summary>为什么提示 model_not_found 或 404？</summary><p>模型 ID 写错，或你的 Key 没有这个模型的权限。先用上方查询确认实际可用模型，再联系管理员调整权限。</p></details>
+<details><summary>为什么没有某个思考强度？</summary><p>不同模型的档位不同。例如 Qwen4 Max 是 low / high / xhigh。以在线查询或自动同步结果为准，不要给所有模型套同一组值。</p></details>
+<details><summary>为什么提示 429？</summary><p>请求过于频繁或同时运行的任务太多。稍等片刻，减少并发后再试。</p></details>
+<details><summary>如何把旧配置更新到最新模型？</summary><p>OpenCode 使用 <code>cpa-sync sync opencode --verify</code>；DSH 使用 <code>cpa-sync sync dsh --profile 你的profile --verify</code>。</p></details>
+</section>
+<footer>小夜 CPA 网关 · 配置遇到问题，把错误状态码和所用工具告诉店主即可，不要发送完整 Key。</footer>
+</main>
+<script>
+document.querySelectorAll('.copy').forEach(button=>{button.addEventListener('click',async()=>{const text=button.nextElementSibling.textContent;try{await navigator.clipboard.writeText(text);button.textContent='已复制';setTimeout(()=>button.textContent='复制',1400)}catch{button.textContent='请手动复制'}})});
+document.querySelectorAll('.tab').forEach(button=>{button.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));button.classList.add('active');document.getElementById(button.dataset.target).classList.add('active')})});
+const form=document.getElementById('capability-form');
+form.addEventListener('submit',async event=>{event.preventDefault();const button=document.getElementById('query-button');const status=document.getElementById('status');const results=document.getElementById('results');results.replaceChildren();status.className='';status.textContent='正在安全连接服务器…';button.disabled=true;const keyInput=document.getElementById('api-key');try{const base=document.getElementById('base-url').value.trim().replace(/\/+$/,'');const response=await fetch(base+'/capabilities',{headers:{Authorization:'Bearer '+keyInput.value}});const data=await response.json();if(!response.ok)throw new Error(data.error?.message||('HTTP '+response.status));const models=Array.isArray(data.models)?data.models:[];status.className='success';status.textContent='查询成功：你的 Key 当前可使用 '+models.length+' 个模型。';models.forEach(model=>{const card=document.createElement('div');card.className='model';const title=document.createElement('strong');title.textContent=model.display_name||model.id;const id=document.createElement('code');id.textContent=model.id;const details=document.createElement('small');const reasoning=model.reasoning||{};const efforts=reasoning.efforts||[];details.textContent='上下文 '+(model.limits?.context??'未知')+' · 最大输出 '+(model.limits?.max_output??'未知')+' · 输入 '+(model.modalities?.input||[]).join('/')+' · 思考 '+(reasoning.supported?(efforts.join(' / ')||'支持'):'不支持');card.append(title,id,details);results.append(card)});keyInput.value=''}catch(error){status.className='error';status.textContent='查询失败：'+error.message+'\n请检查 Base URL、Key 和网络连接。'}finally{button.disabled=false}});
+</script>
+</body>
+</html>
