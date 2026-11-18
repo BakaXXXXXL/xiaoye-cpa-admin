@@ -2,6 +2,10 @@ schema_version: 1
 pools:
   public/pool-model:
     strategy: round-robin
+    vision:
+      mode: preprocess
+      provider: provider-vision
+      model: native-vision-model
     channels:
       - id: provider-a-0
         provider: provider-a

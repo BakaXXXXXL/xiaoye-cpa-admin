@@ -123,6 +123,17 @@ def apply():
     print(f"Applied. Rollback snapshot: {saved}")
 
 
+def default_upstream_ref(access):
+    policies = access.get("policies") or {}
+    for name, principal in (access.get("principals") or {}).items():
+        if principal.get("disabled"):
+            continue
+        allowed = [model for policy_name in principal.get("policies") or [] for model in (policies.get(policy_name) or {}).get("allow_models") or []]
+        if "*" in allowed:
+            return principal.get("upstream_key_ref") or principal.get("credential_ref") or name
+    raise RuntimeError("no enabled full-access principal is available for the internal upstream reference")
+
+
 def access_command(args):
     access = load_yaml(ACCESS)
     principals = access.setdefault("principals", {})
@@ -137,14 +148,41 @@ def access_command(args):
         return
     if args.action in ("create-key", "rotate-key"):
         credentials = json.loads(SECRETS.read_text(encoding="utf-8"))
-        principal = principals.setdefault(args.name, {"credential_ref": args.name, "upstream_key_ref": args.name, "policies": [], "endpoints": {"models": True, "capabilities": True, "chat": True, "responses": True, "usage": True, "credits": False}, "limits": {"rpm": 150}})
+        if args.action == "create-key":
+            if not args.name:
+                raise RuntimeError("create-key requires a name")
+            if args.name in principals or args.name in credentials:
+                raise RuntimeError(f"principal or credential already exists: {args.name}; use rotate-key")
+            if args.policy:
+                if args.policy not in policies:
+                    raise RuntimeError(f"unknown policy: {args.policy}")
+                policy_name = args.policy
+            else:
+                policy_name = f"{args.name}-models"
+                if policy_name in policies:
+                    raise RuntimeError(f"policy already exists: {policy_name}")
+                policies[policy_name] = {"allow_models": []}
+            upstream_ref = args.upstream_ref or default_upstream_ref(access)
+            if upstream_ref not in credentials:
+                raise RuntimeError(f"upstream secret ref does not exist: {upstream_ref}")
+            credential_ref = args.name
+            principals[args.name] = {"credential_ref": credential_ref, "upstream_key_ref": upstream_ref, "policies": [policy_name], "endpoints": {"models": True, "capabilities": True, "chat": True, "responses": True, "usage": True, "credits": False}, "limits": {"rpm": 150}}
+            credentials[credential_ref] = {}
+        else:
+            principal = principals.get(args.name)
+            if not principal:
+                raise RuntimeError(f"unknown principal: {args.name}")
+            credential_ref = principal.get("credential_ref") or args.name
+            if credential_ref not in credentials:
+                raise RuntimeError(f"credential ref does not exist: {credential_ref}")
+            policy_name = None
         key = "cpa-" + secretgen.token_urlsafe(32)
-        credential = credentials.setdefault(args.name, {})
-        credential["key"] = key
-        credential.setdefault("upstream_key", key)
+        credentials[credential_ref]["key"] = key
         save_json(SECRETS, credentials)
         save_yaml(ACCESS, access)
         print(f"New key for {args.name} (shown once): {key}")
+        if policy_name:
+            print(f"Model policy: {policy_name}; grant models before apply if the policy is empty.")
         print("Run cpa-admin apply to activate the change.")
         return
     principal = principals[args.name]
@@ -237,6 +275,7 @@ def main():
     access.add_argument("value", nargs="?")
     access.add_argument("extra", nargs="?")
     access.add_argument("--policy")
+    access.add_argument("--upstream-ref")
     access.add_argument("--model")
     access.add_argument("--endpoint")
     models = sub.add_parser("models")
@@ -279,6 +318,13 @@ def main():
     channel_remove = channel_sub.add_parser("remove")
     channel_remove.add_argument("pool_id")
     channel_remove.add_argument("channel_id")
+    vision = pool_sub.add_parser("vision")
+    vision_sub = vision.add_subparsers(dest="vision_action", required=True)
+    vision_set = vision_sub.add_parser("set")
+    vision_set.add_argument("pool_id")
+    vision_set.add_argument("mode", choices=["inherit", "preprocess"])
+    vision_set.add_argument("--provider")
+    vision_set.add_argument("--model")
     for action in ("diff", "apply", "rollback", "import"):
         pool_sub.add_parser(action)
     sub.add_parser("validate")
@@ -314,6 +360,8 @@ def main():
                 pools.add_channel(args.pool_id, args.channel_id, args.provider, args.name, args.priority, args.display_name)
             else:
                 pools.remove_channel(args.pool_id, args.channel_id)
+        elif action == "vision":
+            pools.set_vision(args.pool_id, args.mode, args.provider, args.model)
         elif action in ("enable", "disable", "set-priority"):
             value = args.value if action == "set-priority" else None
             pools.edit_pool(args.pool_id, args.channel_id, action, value)

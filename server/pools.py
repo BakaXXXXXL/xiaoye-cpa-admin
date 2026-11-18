@@ -11,7 +11,9 @@ import yaml
 
 CORE = Path("/opt/cli-proxy-api/config.yaml")
 POOLS = Path("/opt/cpa-friend-gate/pools.yaml")
+VISION = Path("/opt/cpa-friend-gate/vision-config.json")
 BACKUPS = Path("/opt/cpa-admin/pool-backups")
+APPLIED = Path("/opt/cpa-admin/pool-applied")
 
 
 def load_core():
@@ -28,8 +30,16 @@ def save_pools(document):
     os.replace(temporary, POOLS)
 
 
+def save_vision(document):
+    temporary = VISION.with_suffix(".tmp")
+    temporary.write_text(json.dumps(document, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    os.chmod(temporary, 0o644)
+    os.replace(temporary, VISION)
+
+
 def import_pools():
     core = load_core()
+    existing = load_pools().get("pools", {}) if POOLS.exists() else {}
     pools = {}
     for provider in (core.get("api-keys") or {}).get("openai-compatibility", []):
         for index, model in enumerate(provider.get("models") or []):
@@ -37,6 +47,8 @@ def import_pools():
             if not alias:
                 continue
             pool = pools.setdefault(alias, {"strategy": "round-robin", "channels": []})
+            if (existing.get(alias) or {}).get("vision"):
+                pool["vision"] = existing[alias]["vision"]
             config = {key: value for key, value in model.items() if key not in ("name", "alias")}
             pool["channels"].append({"id": f"{provider['name']}-{index}", "provider": provider["name"], "name": model["name"], "enabled": True, "priority": provider.get("priority"), "config": config})
     save_pools({"schema_version": 1, "pools": pools})
@@ -107,6 +119,27 @@ def remove_channel(pool_id, channel_id):
     print("Channel draft removed; run cpa-admin pool diff and cpa-admin pool apply")
 
 
+def set_vision(pool_id, mode, provider_name=None, model=None):
+    if mode not in ("inherit", "preprocess"):
+        raise RuntimeError("vision mode must be inherit or preprocess")
+    document = load_pools()
+    pool = get_pool(document, pool_id)
+    if mode == "inherit":
+        pool.pop("vision", None)
+    else:
+        if not provider_name or not model:
+            raise RuntimeError("preprocess requires --provider and --model")
+        providers = {provider["name"]: provider for provider in (load_core().get("api-keys") or {}).get("openai-compatibility", [])}
+        provider = providers.get(provider_name)
+        if not provider:
+            raise RuntimeError(f"unknown provider: {provider_name}")
+        if not provider.get("keys"):
+            raise RuntimeError(f"provider has no credentials: {provider_name}")
+        pool["vision"] = {"mode": "preprocess", "provider": provider_name, "model": model}
+    save_pools(document)
+    print("Vision draft updated; run cpa-admin pool diff and cpa-admin pool apply")
+
+
 def list_pools():
     for pool_id, pool in load_pools().get("pools", {}).items():
         channels = pool.get("channels") or []
@@ -138,6 +171,18 @@ def validate_pools(for_apply=False):
     providers = {provider["name"]: provider for provider in (core.get("api-keys") or {}).get("openai-compatibility", [])}
     pools = load_pools().get("pools") or {}
     for pool_id, pool in pools.items():
+        vision = pool.get("vision") or {}
+        mode = vision.get("mode", "inherit")
+        if mode not in ("inherit", "preprocess"):
+            raise RuntimeError(f"pool {pool_id} has invalid vision mode: {mode}")
+        if mode == "preprocess":
+            if not vision.get("model"):
+                raise RuntimeError(f"pool {pool_id} has no vision preprocessing model")
+            provider = providers.get(vision.get("provider"))
+            if not provider:
+                raise RuntimeError(f"unknown vision provider: {vision.get('provider')}")
+            if not provider.get("keys"):
+                raise RuntimeError(f"vision provider has no credentials: {vision['provider']}")
         channels = pool.get("channels") or []
         if for_apply and not any(channel.get("enabled", True) for channel in channels):
             raise RuntimeError(f"pool {pool_id} has no enabled channel")
@@ -159,11 +204,36 @@ def validate_pools(for_apply=False):
     return pools
 
 
-def snapshot():
-    target = BACKUPS / dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+def copy_state(target, core=None, pools_path=None, vision=None):
+    core = core or CORE
+    pools_path = pools_path or POOLS
+    vision = vision or VISION
     target.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(CORE, target / "config.yaml")
-    shutil.copy2(POOLS, target / "pools.yaml")
+    os.chmod(target, 0o700)
+    shutil.copy2(core, target / "config.yaml")
+    shutil.copy2(pools_path, target / "pools.yaml")
+    if vision.exists():
+        shutil.copy2(vision, target / VISION.name)
+    else:
+        (target / VISION.name).unlink(missing_ok=True)
+
+
+def ensure_applied_state():
+    if (APPLIED / "config.yaml").exists() and (APPLIED / "pools.yaml").exists():
+        return
+    snapshots = sorted(BACKUPS.glob("*")) if BACKUPS.exists() else []
+    previous_pools = snapshots[-1] / "pools.yaml" if snapshots and (snapshots[-1] / "pools.yaml").exists() else POOLS
+    copy_state(APPLIED, pools_path=previous_pools)
+
+
+def record_applied():
+    copy_state(APPLIED)
+
+
+def snapshot():
+    ensure_applied_state()
+    target = BACKUPS / dt.datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+    copy_state(target, APPLIED / "config.yaml", APPLIED / "pools.yaml", APPLIED / VISION.name)
     return target
 
 
@@ -186,6 +256,23 @@ def render_core():
     return core
 
 
+def render_vision():
+    pools = validate_pools(for_apply=True)
+    return {"schema_version": 1, "pools": {pool_id: pool["vision"] for pool_id, pool in pools.items() if (pool.get("vision") or {}).get("mode") == "preprocess"}}
+
+
+def restart_services():
+    subprocess.run(["systemctl", "restart", "cli-proxy-api.service", "cpa-heartbeat.service"], check=True)
+
+
+def restore_vision(saved):
+    source = saved / VISION.name
+    if source.exists():
+        shutil.copy2(source, VISION)
+    else:
+        VISION.unlink(missing_ok=True)
+
+
 def wait_for_core():
     import sys
     sys.path.insert(0, "/opt/cpa-friend-gate")
@@ -203,32 +290,50 @@ def wait_for_core():
             time.sleep(0.5)
 
 
+def wait_for_heartbeat():
+    request = urllib.request.Request("http://127.0.0.1:8322/healthz")
+    for attempt in range(40):
+        try:
+            with urllib.request.urlopen(request, timeout=5) as response:
+                result = json.load(response)
+            if result.get("ok"):
+                return result.get("preprocess_pools", 0)
+        except (OSError, ValueError):
+            if attempt == 39:
+                raise
+            time.sleep(0.5)
+    raise RuntimeError("heartbeat proxy did not become ready")
+
+
 def apply_pools():
     validate_pools(for_apply=True)
     saved = snapshot()
     rendered = render_core()
+    rendered_vision = render_vision()
     temporary = CORE.with_suffix(".cpa-admin-tmp")
     temporary.write_text(yaml.safe_dump(rendered, allow_unicode=True, sort_keys=False), encoding="utf-8")
     os.chmod(temporary, 0o600)
     os.replace(temporary, CORE)
     try:
-        subprocess.run(["systemctl", "restart", "cli-proxy-api.service"], check=True)
+        save_vision(rendered_vision)
+        restart_services()
         count = wait_for_core()
+        wait_for_heartbeat()
+        record_applied()
     except Exception:
         shutil.copy2(saved / "config.yaml", CORE)
         shutil.copy2(saved / "pools.yaml", POOLS)
-        subprocess.run(["systemctl", "restart", "cli-proxy-api.service"], check=True)
+        restore_vision(saved)
+        restart_services()
         wait_for_core()
+        wait_for_heartbeat()
         raise
     print(f"Pool configuration applied; CPA reports {count} models. Snapshot: {saved}")
 
 
 def diff_pools():
-    snapshots = sorted(BACKUPS.glob("*"))
-    if not snapshots:
-        print("No pool snapshot; run cpa-admin pool apply")
-        return
-    previous = snapshots[-1]
+    ensure_applied_state()
+    previous = APPLIED
     for path in (POOLS,):
         old_path = previous / path.name
         old = old_path.read_text(encoding="utf-8").splitlines() if old_path.exists() else []
@@ -243,8 +348,11 @@ def rollback_pools():
     saved = snapshots[-1]
     shutil.copy2(saved / "config.yaml", CORE)
     shutil.copy2(saved / "pools.yaml", POOLS)
-    subprocess.run(["systemctl", "restart", "cli-proxy-api.service"], check=True)
+    restore_vision(saved)
+    restart_services()
     wait_for_core()
+    wait_for_heartbeat()
+    record_applied()
     print(f"Pool configuration rolled back to {saved}")
 
 

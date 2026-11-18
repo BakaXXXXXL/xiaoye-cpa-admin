@@ -88,6 +88,10 @@ cpa-admin access create-key NAME
 cpa-admin access rotate-key NAME
 ```
 
+新建 Key 会自动创建并绑定独立的 `NAME-models` 策略，初始模型范围为空。随后使用 `cpa-admin access grant NAME MODEL_ID` 授权，不会影响其他 Key。只有显式传入 `--policy POLICY_NAME` 才会共用已有策略。
+
+新 Key 复用一个已启用全权限 principal 的内部上游引用，不会把该上游凭据交给下游用户。也可用 `--upstream-ref REF` 指定已有引用。轮换只替换该 principal 的下游 Key，不改变其模型策略或内部上游引用。
+
 新 Key 只在终端显示一次。通过安全渠道交给用户，不要写入工单、聊天日志或 Git。创建和轮换后需要 apply 才会生效。
 
 ## 检查、发布和回滚
@@ -165,6 +169,20 @@ cpa-admin pool set-priority xiaoye/auto CHANNEL_ID 80
 
 优先级实际属于 CPA provider，不是独立的单模型属性。通过 `set-priority` 或 `channel add --priority` 修改时，会同步更新同一 provider 的渠道引用，避免不同池之间产生冲突。
 
+配置池的识图模式：
+
+```bash
+cpa-admin pool vision set xiaoye/auto inherit
+cpa-admin pool vision set xiaoye/auto preprocess \
+  --provider qwen-payg \
+  --model qwen3.8-flash
+```
+
+- `inherit` 是默认值。未配置 `vision` 或显式设为 `inherit` 时，不做识图相关的请求改写或渠道切换，图片随原请求进入聚合池，适用于池内渠道均可识图的情况。
+- `preprocess` 适用于池内存在纯文本渠道的情况。图片先交给指定的上游视觉模型，转写结果加入原请求后仍请求原池，不改变原 `model`、思考强度等参数。
+- `--provider` 必须是 CPA 核心已有 provider，`--model` 是该 provider 的原生视觉模型名。视觉模型不需要成为公开模型，生成的 `vision-config.json` 不包含密钥。
+- 识图预处理目前作用于 `/v1/chat/completions`；`/v1/responses` 保持原链路。预处理失败会返回错误，不会丢弃图片后继续请求。
+
 显式测试一条真实渠道：
 
 ```bash
@@ -181,7 +199,7 @@ cpa-admin pool apply
 cpa-admin pool rollback
 ```
 
-池发布会备份 CPA 核心配置和 pools.yaml，只替换受管理的模型映射，然后重启 CPA 核心并等待 `/models` 恢复。失败会恢复备份。心跳、视觉预处理、UA 分流和 LongCat 思考转换不会被移除。
+池发布会备份上一次实际发布的 CPA 核心配置、pools.yaml 和识图配置，只替换受管理的模型映射与生成文件，然后重启 CPA 核心及 8322 代理，并等待 `/models` 和代理 `/healthz` 恢复。失败会一致恢复三部分配置。`pool diff` 始终与最后已发布状态比较。心跳、视觉预处理、UA 分流和 LongCat 思考转换不会被移除。
 
 ## 下游同步
 

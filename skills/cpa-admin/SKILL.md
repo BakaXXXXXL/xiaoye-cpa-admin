@@ -1,6 +1,6 @@
 ---
 name: cpa-admin
-description: Manage CPA model capabilities, downstream-key access and upstream model pools with cpa-admin. Use when listing, adding, disabling, granting or revoking models, changing key limits/endpoints, creating pools, adding or removing pool channels, testing or changing channels, validating, applying or rolling back CPA configuration.
+description: Manage CPA model capabilities, downstream-key access and upstream model pools with cpa-admin. Use when listing, adding, disabling, granting or revoking models, changing key limits/endpoints, creating pools, adding or removing pool channels, configuring inherit/preprocess vision handling, testing or changing channels, validating, applying or rolling back CPA configuration.
 ---
 
 # CPA 管理
@@ -79,7 +79,7 @@ cpa-admin history
 cpa-admin rollback
 ```
 
-创建 Key 是敏感操作。确认后执行 `cpa-admin access create-key NAME`，将一次性的新 Key 安全交给用户，不要保存到仓库。
+创建 Key 是敏感操作。确认后执行 `cpa-admin access create-key NAME`，将一次性的新 Key 安全交给用户，不要保存到仓库。新 Key 默认绑定独立的 `NAME-models` 空策略，之后用 `access grant` 添加模型；只有用户明确要求共享策略时才使用 `--policy`。默认复用全权限 principal 的内部上游引用，`--upstream-ref` 只能指向已有引用，不读取或输出其密钥。轮换 Key 不修改策略或上游引用。
 
 ## 聚合池
 
@@ -103,6 +103,10 @@ cpa-admin pool channel remove public/new-model provider-a-main
 cpa-admin pool disable xiaoye/auto channel-id
 cpa-admin pool enable xiaoye/auto channel-id
 cpa-admin pool set-priority xiaoye/auto channel-id 80
+cpa-admin pool vision set xiaoye/auto inherit
+cpa-admin pool vision set xiaoye/auto preprocess \
+  --provider qwen-payg \
+  --model qwen3.8-flash
 cpa-admin pool validate
 cpa-admin pool validate --for-publish
 cpa-admin pool diff
@@ -110,7 +114,9 @@ cpa-admin pool diff
 
 新渠道只能引用已有 provider，不接收或复制 BaseURL、密钥。空池可以保存草稿，但不能通过发布校验。全新公开模型还需要单独维护模型目录和下游授权，不能只做池映射。
 
-建池、渠道增删和启停、池发布和回滚需要用户确认：
+识图只有 `inherit` 和 `preprocess`：未配置或 `inherit` 时不做识图改写；`preprocess` 必须指定已有 provider 及其原生视觉模型。它目前只处理 `/v1/chat/completions`，Responses 保持原链路。预处理失败不能丢弃图片后继续请求。
+
+建池、渠道增删和启停、识图模式修改、池发布和回滚需要用户确认：
 
 ```bash
 cpa-admin pool apply
