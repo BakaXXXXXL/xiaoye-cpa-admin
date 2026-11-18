@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>API 使用指南 · 小夜 CPA 网关</title>
-<meta name="description" content="拿到 Base URL 和 Key 后，一步一步在 OpenCode、DSH 或其他 OpenAI 兼容工具中配置小夜 CPA。">
+<meta name="description" content="拿到 Base URL 和 Key 后，一步一步在 OpenCode、DSH、Pi、Kimi Code 或其他 OpenAI 兼容工具中配置小夜 CPA。">
 <style>
 :root{--bg:#2A1F14;--card:rgba(61,43,31,.82);--cream:#FFF8EE;--muted:rgba(255,248,238,.68);--amber:#E8A33D;--pudding:#F5DFA1;--purple:#9B82C5;--line:rgba(255,248,238,.13);--code:#1E160F;--green:#9DCB9A}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;background:radial-gradient(ellipse at 85% 0,rgba(123,94,175,.16),transparent 42%),radial-gradient(ellipse at 5% 20%,rgba(232,163,61,.12),transparent 38%),var(--bg);color:var(--cream);line-height:1.8;user-select:text}a{color:var(--amber);text-decoration:none}a:hover{text-decoration:underline}button,input,select{font:inherit}button{cursor:pointer}.topbar{position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;gap:16px;align-items:center;padding:14px 28px;background:rgba(42,31,20,.88);border-bottom:1px solid var(--line);backdrop-filter:blur(14px)}.back{color:var(--muted)}.brand{color:var(--pudding);font-size:.85em;letter-spacing:.1em}.wrap{width:min(1060px,calc(100% - 40px));margin:auto;padding:48px 0 80px}.hero{display:grid;grid-template-columns:1fr 180px;gap:28px;align-items:center;padding:16px 0 38px;border-bottom:1px solid var(--line)}.eyebrow{color:var(--amber);font-size:.78em;letter-spacing:.15em}h1{margin:12px 0;font-family:"Noto Serif SC","SimSun",serif;font-size:clamp(2em,5vw,3.25em);line-height:1.3;font-weight:600}h2{margin:0 0 12px;color:var(--pudding);font-family:"Noto Serif SC","SimSun",serif;font-size:1.42em}h3{margin:18px 0 8px;color:var(--pudding);font-size:1.02em}p{margin:8px 0;color:var(--muted)}.hero img{width:180px;filter:drop-shadow(0 10px 24px rgba(0,0,0,.35))}.badge{display:inline-block;padding:3px 10px;border:1px solid rgba(232,163,61,.35);border-radius:999px;color:var(--pudding);background:rgba(232,163,61,.08);font-size:.82em}.progress{display:flex;gap:8px;margin:24px 0 4px}.progress span{height:4px;flex:1;border-radius:4px;background:var(--line)}.progress span:first-child{background:var(--amber)}section{margin-top:24px;padding:28px;border:1px solid var(--line);border-radius:15px;background:var(--card)}.step{display:flex;gap:14px;align-items:flex-start;margin-bottom:14px}.number{display:grid;place-items:center;flex:0 0 30px;height:30px;border-radius:50%;background:var(--amber);color:var(--bg);font-weight:700}.step p{margin:1px 0}.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}.choice{padding:18px;border:1px solid var(--line);border-radius:11px;background:rgba(42,31,20,.45)}.choice strong{color:var(--cream)}code{padding:2px 6px;border-radius:5px;background:var(--code);color:var(--pudding);font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.9em}.codebox{position:relative;margin-top:14px;border:1px solid var(--line);border-radius:10px;background:var(--code);overflow:hidden}.codebox pre{margin:0;padding:16px;overflow:auto;color:#F4E7D3;font: .86em/1.75 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;word-break:break-word}.copy{position:absolute;right:8px;top:8px;padding:4px 10px;border:1px solid var(--line);border-radius:7px;background:#3D2B1F;color:var(--pudding);font-size:.78em}.copy:hover{border-color:var(--amber)}.note{margin-top:16px;padding:13px 15px;border-left:3px solid var(--amber);border-radius:0 8px 8px 0;background:rgba(232,163,61,.07);color:var(--muted)}.safe{border-left-color:var(--green)}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}.tab{padding:7px 14px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--muted)}.tab.active{border-color:var(--amber);background:rgba(232,163,61,.12);color:var(--pudding)}.panel{display:none}.panel.active{display:block}.field{display:grid;gap:6px;margin:12px 0}.field label{color:var(--pudding);font-size:.9em}.field input,.field select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:var(--code);color:var(--cream);outline:none}.field input:focus{border-color:var(--amber)}.primary{padding:10px 18px;border:0;border-radius:8px;background:var(--amber);color:var(--bg);font-weight:700}.primary:hover{filter:brightness(1.08)}.primary:disabled{opacity:.55;cursor:wait}.results{display:grid;gap:10px;margin-top:18px}.model{padding:14px;border:1px solid var(--line);border-radius:9px;background:rgba(42,31,20,.5)}.model strong{color:var(--pudding)}.model small{display:block;color:var(--muted)}.error{color:#FFB4A2;white-space:pre-wrap}.success{color:var(--green)}table{width:100%;border-collapse:collapse;margin-top:12px;font-size:.92em}th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{color:var(--muted)}td{color:var(--muted)}td:first-child{color:var(--pudding)}details{margin-top:12px;border-top:1px solid var(--line);padding-top:12px}summary{cursor:pointer;color:var(--pudding)}ul{color:var(--muted)}li{margin:5px 0}footer{text-align:center;color:var(--muted);font-size:.86em;margin-top:30px}.anchor{scroll-margin-top:82px}@media(max-width:720px){.wrap{width:calc(100% - 26px);padding-top:30px}.hero{grid-template-columns:1fr}.hero img{display:none}section{padding:19px}.two-col{grid-template-columns:1fr}.topbar{padding:12px 16px}.brand{display:none}table{display:block;overflow-x:auto}.codebox pre{padding-right:54px}}
@@ -14,7 +14,7 @@
 <header class="topbar"><a class="back" href="/">← 返回小夜甜品店</a><span class="brand">CPA · START HERE</span></header>
 <main class="wrap">
 <div class="hero">
-  <div><div class="eyebrow">API GUIDE FOR EVERYONE</div><h1>拿到地址和 Key，<br>就能开始使用。</h1><p>不需要懂编程。这份页面会带你把模型配置进 OpenCode、DSH 或其他支持 OpenAI 兼容接口的工具。</p><span class="badge">OpenAI 兼容 · 自动同步模型能力</span></div>
+  <div><div class="eyebrow">API GUIDE FOR EVERYONE</div><h1>拿到地址和 Key，<br>就能开始使用。</h1><p>不需要懂编程。这份页面会带你把模型配置进 OpenCode、DSH、Pi、Kimi Code 或其他支持 OpenAI 兼容接口的工具。</p><span class="badge">OpenAI 兼容 · 自动同步模型能力</span></div>
   <img src="assets/Q版/小夜Q_捧布丁.png" alt="捧着布丁的小夜">
 </div>
 <div class="progress" aria-hidden="true"><span></span><span></span><span></span></div>
@@ -34,9 +34,9 @@
 <div class="step"><span class="number">1</span><p><strong>打开 Windows 终端。</strong>按 <code>Win + R</code>，输入 <code>powershell</code>，按回车。</p></div>
 <div class="step"><span class="number">2</span><p><strong>复制下面整行到终端，按回车。</strong>它只安装配置工具，不会修改模型权限。</p></div>
 <div class="codebox"><button class="copy">复制</button><pre>irm https://raw.githubusercontent.com/BakaXXXXXL/xiaoye_cap-sync/main/install.ps1 | iex</pre></div>
-<p>看到 <code>cpa-sync 0.1.0</code> 就表示安装成功。如果终端提示找不到命令，请关闭终端再打开。</p>
+<p>看到 <code>cpa-sync 0.2.0</code> 就表示安装成功。如果终端提示找不到命令，请关闭终端再打开。已经安装过旧版时，重新执行上面的安装命令即可升级。</p>
 <div class="step"><span class="number">3</span><p><strong>选择你的工具，然后按对应步骤操作。</strong></p></div>
-<div class="tabs" role="tablist"><button class="tab active" data-target="opencode">OpenCode</button><button class="tab" data-target="dsh">DSH</button><button class="tab" data-target="other">其他工具</button></div>
+<div class="tabs" role="tablist"><button class="tab active" data-target="opencode">OpenCode</button><button class="tab" data-target="dsh">DSH</button><button class="tab" data-target="pi">Pi</button><button class="tab" data-target="kimi">Kimi Code</button><button class="tab" data-target="other">其他工具</button></div>
 <div class="panel active" id="opencode">
 <h3>OpenCode：三条命令完成配置</h3>
 <p>把下面的地址和 <code>你的Key</code> 替换成你实际拿到的内容，再依次执行：</p>
@@ -55,6 +55,24 @@ $env:CPA_API_KEY = "你的Key"</pre></div>
 <table><tr><th>你使用的界面</th><th>需要执行的命令</th></tr><tr><td>桌面端</td><td><code>cpa-sync setup dsh --profile desktop --verify</code></td></tr><tr><td>终端界面（TUI）</td><td><code>cpa-sync setup dsh --profile dsh-tui --verify</code></td></tr><tr><td>网页界面（Web）</td><td><code>cpa-sync setup dsh --profile web --verify</code></td></tr></table>
 <p>配置完成后重新打开 DSH，在模型选择器中选择 CPA 提供的模型。模型修改会在下一次请求时生效。</p>
 <div class="note">以后同步更新时，把命令中的 <code>setup</code> 改成 <code>sync</code>，profile 保持不变。</div>
+</div>
+<div class="panel" id="pi">
+<h3>Pi：自动同步模型和思考档位</h3>
+<p>把 <code>你的Key</code> 换成实际拿到的内容，依次执行：</p>
+<div class="codebox"><button class="copy">复制</button><pre>$env:CPA_BASE_URL = "https://bakandarkfsg.com/cpa/v1"
+$env:CPA_API_KEY = "你的Key"
+cpa-sync setup pi --verify</pre></div>
+<p>看到 <code>Pi configuration valid</code> 后，在 Pi 中打开 <code>/model</code>，搜索并选择需要的模型。打开模型选择器时会重新读取配置。</p>
+<div class="note">Pi 的 <code>/thinking</code> 会只显示当前模型支持的档位。以后运行 <code>cpa-sync sync pi --verify</code> 即可更新。</div>
+</div>
+<div class="panel" id="kimi">
+<h3>Kimi Code：自动同步模型能力</h3>
+<p>把 <code>你的Key</code> 换成实际拿到的内容，依次执行：</p>
+<div class="codebox"><button class="copy">复制</button><pre>$env:CPA_BASE_URL = "https://bakandarkfsg.com/cpa/v1"
+$env:CPA_API_KEY = "你的Key"
+cpa-sync setup kimi --verify</pre></div>
+<p>看到 <code>Kimi Code configuration valid</code> 后，重新打开 Kimi Code，在 <code>/model</code> 中选择模型。原有登录、权限和其他供应商设置不会被覆盖。</p>
+<div class="note">以后运行 <code>cpa-sync sync kimi --verify</code> 即可更新；该命令也会检查配置文件是否合法。</div>
 </div>
 <div class="panel" id="other">
 <h3>其他工具：不用安装同步器也能接入</h3>
@@ -89,7 +107,7 @@ $env:CPA_API_KEY = "你的Key"</pre></div>
 <details><summary>为什么提示 model_not_found 或 404？</summary><p>模型 ID 写错，或你的 Key 没有这个模型的权限。先用上方查询确认实际可用模型，再联系管理员调整权限。</p></details>
 <details><summary>为什么没有某个思考强度？</summary><p>不同模型的档位不同。例如 Qwen4 Max 是 low / high / xhigh。以在线查询或自动同步结果为准，不要给所有模型套同一组值。</p></details>
 <details><summary>为什么提示 429？</summary><p>请求过于频繁或同时运行的任务太多。稍等片刻，减少并发后再试。</p></details>
-<details><summary>如何把旧配置更新到最新模型？</summary><p>OpenCode 使用 <code>cpa-sync sync opencode --verify</code>；DSH 使用 <code>cpa-sync sync dsh --profile 你的profile --verify</code>。</p></details>
+<details><summary>如何把旧配置更新到最新模型？</summary><p>OpenCode 使用 <code>cpa-sync sync opencode --verify</code>；DSH 使用 <code>cpa-sync sync dsh --profile 你的profile --verify</code>；Pi 使用 <code>cpa-sync sync pi --verify</code>；Kimi Code 使用 <code>cpa-sync sync kimi --verify</code>。</p></details>
 </section>
 <footer>小夜 CPA 网关 · 配置遇到问题，把错误状态码和所用工具告诉店主即可，不要发送完整 Key。</footer>
 </main>
